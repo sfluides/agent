@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- standard DTO for import file -->
+    <bean id="organizationDTOPrototype" class="fr.osb.smartf.agent.worker.service.dto.OrganizationDTO"
+          scope="prototype"/>
+
+    <!-- MongoItemWriter -->
+    <bean id="organizationItemWriter" class="org.springframework.batch.item.data.MongoItemWriter">
+        <property name="template" ref="mongoTemplate"/>
+        <property name="collection" value="organization"/>
+    </bean>
+
+    <!-- OrganizationItemProcessor  -->
+    <bean id="organizationItemProcessor"
+          class="fr.osb.smartf.agent.worker.batch.organization.processor.OrganizationItemProcessor"/>
+
+</beans>

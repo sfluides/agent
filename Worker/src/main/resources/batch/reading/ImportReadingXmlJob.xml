@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:util="http://www.springframework.org/schema/util"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                           http://www.springframework.org/schema/batch/spring-batch.xsd
+                           http://www.springframework.org/schema/util
+                           http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <!-- JOB -->
+    <job id="importReadingXmlJob" parent="abstractParentJob">
+        <step id="importReadingXmlStep" parent="abstractStepImportFileJob" next="readingXmlFileActionDeciderStep">
+            <tasklet>
+                <chunk reader="readingXmlItemReader" processor="readingItemProcessor" writer="readingItemWriter"
+                       commit-interval="10000" skip-limit="10">
+                    <skippable-exception-classes>
+                        <include class="org.springframework.oxm.UnmarshallingFailureException"/>
+                        <exclude class="org.springframework.batch.item.NonTransientResourceException"/>
+                    </skippable-exception-classes>
+                </chunk>
+            </tasklet>
+        </step>
+        <decision id="readingXmlFileActionDeciderStep" decider="fileActionDecider">
+            <next on="COMPLETED" to="readingDeleteXmlFileStep"/>
+            <next on="COMPLETED_WITH_ERRORS" to="readingMoveErrorXmlFileStep"/>
+        </decision>
+        <step id="readingDeleteXmlFileStep" parent="abstractStepDeleteFile"/>
+        <step id="readingMoveErrorXmlFileStep" parent="abstractMoveErrorFileStep"/>
+    </job>
+
+    <!-- ReadingXmlItemReader -->
+    <beans:bean id="readingXmlItemReader" class="org.springframework.batch.item.xml.StaxEventItemReader" scope="step">
+        <beans:property name="fragmentRootElementName" value="reading"/>
+        <beans:property name="resource" value="file:#{jobParameters[pathToFile]}"/>
+        <beans:property name="unmarshaller" ref="readingMarshaller"/>
+    </beans:bean>
+
+    <!-- ReadingMarshaller -->
+    <beans:bean id="readingMarshaller"
+                class="org.springframework.oxm.xstream.XStreamMarshaller">
+        <beans:property name="aliases">
+            <util:map id="aliases">
+                <beans:entry key="reading"
+                             value="fr.osb.smartf.agent.worker.service.dto.ReadingDTO"/>
+            </util:map>
+        </beans:property>
+    </beans:bean>
+
+</beans:beans>

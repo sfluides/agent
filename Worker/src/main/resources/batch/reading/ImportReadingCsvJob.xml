@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                            http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+
+    <!-- JOB -->
+    <job id="importReadingCSVJob" parent="abstractParentJob">
+        <step id="importReadingCSVStep" parent="abstractStepImportFileJob" next="readingCsvFileActionDeciderStep">
+            <tasklet task-executor="taskExecutor">
+                <chunk reader="readingCsvItemReader" processor="readingPdcItemProcessor"
+                       writer="mongoTemplateReadingItemWriter"
+                       commit-interval="10000" skip-limit="10">
+                    <skippable-exception-classes>
+                        <include class="org.springframework.batch.item.file.FlatFileParseException"/>
+                        <exclude class="org.springframework.batch.item.NonTransientResourceException"/>
+                    </skippable-exception-classes>
+                </chunk>
+            </tasklet>
+        </step>
+        <decision id="readingCsvFileActionDeciderStep" decider="fileActionDecider">
+            <next on="COMPLETED" to="readingDeleteCsvFileStep"/>
+            <next on="COMPLETED_WITH_ERRORS" to="readingMoveErrorCsvFileStep"/>
+        </decision>
+        <step id="readingMoveErrorCsvFileStep" parent="abstractMoveErrorFileStep"/>
+        <step id="readingDeleteCsvFileStep" parent="abstractStepDeleteFile" next="importReadingCalculConsumStep"/>
+        <step id="importReadingCalculConsumStep">
+            <tasklet task-executor="taskExecutor">
+                <chunk reader="mongoAggregatedItemReader" processor="consumptionItemProcessor"
+                       writer="aggregatedReadingCompositeItemWriter"
+                       commit-interval="1000"/>
+            </tasklet>
+            <listeners>
+                <listener ref="consumptionStepExecutionListener"/>
+            </listeners>
+        </step>
+    </job>
+
+    <beans:bean id="consumptionStepExecutionListener"
+                class="fr.osb.smartf.agent.worker.batch.listener.ConsumptionStepExecutionListener" scope="step"/>
+    <!-- MongoTemplateReadingItemWriter -->
+    <beans:bean id="mongoTemplateReadingItemWriter"
+                class="fr.osb.smartf.agent.worker.batch.reading.writer.MongoTemplateReadingItemWriter">
+        <beans:property name="mongoTemplate" ref="mongoTemplate"/>
+    </beans:bean>
+
+    <!-- CSV file reader -->
+    <beans:bean id="readingCsvItemReader" class="org.springframework.batch.item.file.FlatFileItemReader"
+                scope="step">
+        <beans:property name="resource" value="file:#{jobParameters[pathToFile]}"/>
+        <beans:property name="lineMapper">
+            <beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+                <!-- split it -->
+                <beans:property name="lineTokenizer">
+                    <beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+                        <!-- list of aliases/columns that indicates file format and mapping fields -->
+                        <beans:property name="names" value="idPdc,counting,date,value"/>
+                        <beans:property name="delimiter" value=";"/>
+                    </beans:bean>
+                </beans:property>
+                <beans:property name="fieldSetMapper">
+                    <!-- map to an object -->
+                    <beans:bean class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+                        <beans:property name="prototypeBeanName" value="readingPdcDTOPrototype"/>
+                    </beans:bean>
+                </beans:property>
+            </beans:bean>
+        </beans:property>
+    </beans:bean>
+
+    <!-- DTO for import file -->
+    <beans:bean id="readingPdcDTOPrototype" class="fr.osb.smartf.agent.worker.service.dto.ReadingPdcDTO"
+                scope="prototype"/>
+
+    <!-- ReadingItemProcessor -->
+    <beans:bean id="readingPdcItemProcessor"
+                class="fr.osb.smartf.agent.worker.batch.reading.processor.ReadingPdcItemProcessor"/>
+</beans:beans>

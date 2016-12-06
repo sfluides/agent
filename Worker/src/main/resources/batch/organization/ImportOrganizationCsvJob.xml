@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                            http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+    <!--JOB-->
+    <job id="importOrganizationCSVJob" parent="abstractParentJob">
+        <step id="importOrganizationCSVStep" parent="abstractStepImportFileJob" next="organizationCsvFileActionDeciderStep">
+            <tasklet task-executor="taskExecutor">
+                <chunk reader="organizationCsvItemReader" processor="organizationItemProcessor"
+                       writer="organizationItemWriter" commit-interval="10000" skip-limit="10">
+                    <skippable-exception-classes>
+                        <include class="org.springframework.batch.item.file.FlatFileParseException"/>
+                        <exclude class="org.springframework.batch.item.NonTransientResourceException"/>
+                    </skippable-exception-classes>
+                </chunk>
+            </tasklet>
+        </step>
+        <decision id="organizationCsvFileActionDeciderStep" decider="fileActionDecider">
+            <next on="COMPLETED" to="organizationDeleteCsvFileStep"/>
+            <next on="COMPLETED_WITH_ERRORS" to="organizationMoveErrorCsvFileStep"/>
+        </decision>
+        <step id="organizationDeleteCsvFileStep" parent="abstractStepDeleteFile"/>
+        <step id="organizationMoveErrorCsvFileStep" parent="abstractMoveErrorFileStep"/>
+    </job>
+
+    <!-- CSV file reader -->
+    <beans:bean id="organizationCsvItemReader" class="org.springframework.batch.item.file.FlatFileItemReader"
+                scope="step">
+        <!-- Read a csv file -->
+        <!-- Resource value is in job params -->
+        <beans:property name="resource" value="file:#{jobParameters[pathToFile]}"/>
+        <beans:property name="lineMapper">
+            <beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+                <!-- split it -->
+                <beans:property name="lineTokenizer">
+                    <beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+                        <!-- list of aliases/columns that indicates file format and mapping fields -->
+                        <beans:property name="names"
+                                        value="id,name,guId,segment,type,description,email,address,zipCode,town,country,logo"/>
+                        <beans:property name="delimiter" value=";"/>
+                    </beans:bean>
+                </beans:property>
+                <beans:property name="fieldSetMapper">
+                    <!-- map to an object -->
+                    <beans:bean class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+                        <beans:property name="prototypeBeanName" value="organizationDTOPrototype"/>
+                    </beans:bean>
+                </beans:property>
+            </beans:bean>
+        </beans:property>
+    </beans:bean>
+</beans:beans>

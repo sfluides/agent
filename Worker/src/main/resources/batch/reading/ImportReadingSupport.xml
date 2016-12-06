@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- standard DTO for import file -->
+    <bean id="readingDTOPrototype" class="fr.osb.smartf.agent.worker.service.dto.ReadingDTO"
+          scope="prototype"/>
+
+    <!-- ReadingItemWriter -->
+    <bean id="readingItemWriter" class="org.springframework.batch.item.data.MongoItemWriter">
+        <property name="template" ref="mongoTemplate"/>
+        <property name="collection" value="readings"/>
+    </bean>
+
+    <!-- ReadingItemProcessor -->
+    <bean id="readingItemProcessor" class="fr.osb.smartf.agent.worker.batch.reading.processor.ReadingItemProcessor"/>
+
+</beans>

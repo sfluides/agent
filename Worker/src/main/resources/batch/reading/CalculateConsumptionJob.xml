@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                           http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+
+    <!-- JOB -->
+    <job id="calculConsumJob" parent="abstractParentJob">
+        <step id="calculConsumStep">
+            <tasklet task-executor="taskExecutor">
+                <chunk reader="mongoAggregatedItemReader" processor="consumptionItemProcessor"
+                       writer="aggregatedReadingCompositeItemWriter"
+                       commit-interval="1000"/>
+            </tasklet>
+        </step>
+    </job>
+
+    <!-- MongoAggregatedItemReader -->
+    <beans:bean id="mongoAggregatedItemReader"
+                class="fr.osb.smartf.agent.worker.batch.reading.reader.MongoAggregatedItemReader" scope="step">
+        <beans:property name="template" ref="mongoTemplate"/>
+        <beans:property name="targetType" value="fr.osb.smartf.agent.worker.service.dto.AggregatedReadingDTO"/>
+    </beans:bean>
+
+    <!-- ConsumptionItemProcessor -->
+    <beans:bean id="consumptionItemProcessor"
+                class="fr.osb.smartf.agent.worker.batch.reading.processor.ConsumptionItemProcessor"/>
+
+    <!-- CompositeItemWriter -->
+    <beans:bean id="aggregatedReadingCompositeItemWriter"
+                class="org.springframework.batch.item.support.CompositeItemWriter">
+        <beans:property name="delegates">
+            <beans:list>
+                <beans:ref bean="consumptionReadingCouchItemWriter"/>
+                <beans:ref bean="aggregatedReadingCouchItemWriter"/>
+            </beans:list>
+        </beans:property>
+    </beans:bean>
+
+    <!-- ConsumptionReadingCouchItemWriter -->
+    <beans:bean id="consumptionReadingCouchItemWriter"
+                class="fr.osb.smartf.agent.worker.batch.reading.writer.ConsumptionReadingCouchItemWriter ">
+        <beans:constructor-arg index="0" ref="couchbaseTemplate"/>
+    </beans:bean>
+
+    <!-- AggregatedReadingCouchItemWriter-->
+    <beans:bean id="aggregatedReadingCouchItemWriter"
+                class="fr.osb.smartf.agent.worker.batch.reading.writer.AggregatedReadingCouchItemWriter ">
+        <beans:constructor-arg index="0" ref="couchbaseTemplate"/>
+    </beans:bean>
+
+</beans:beans>

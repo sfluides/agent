@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Add new scope type to batch beans -->
+    <bean class="org.springframework.batch.core.scope.StepScope"/>
+
+    <!-- Transaction Manager -->
+    <bean id="transactionManager" class="org.springframework.batch.support.transaction.ResourcelessTransactionManager"/>
+
+    <!-- Job Repository -->
+    <bean id="jobRepository" class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="databaseType" value="hsql"/>
+    </bean>
+
+    <!-- Job Operator -->
+    <bean id="jobOperator" class="org.springframework.batch.core.launch.support.SimpleJobOperator">
+        <property name="jobExplorer">
+            <bean class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean">
+                <property name="dataSource" ref="dataSource"/>
+            </bean>
+        </property>
+        <property name="jobRepository" ref="jobRepository"/>
+        <property name="jobRegistry" ref="jobRegistry" />
+        <property name="jobLauncher" ref="jobLauncher"/>
+    </bean>
+
+    <!-- JobRegistryBeanPostProcessor -->
+    <bean id="jobRegistryBeanPostProcessor" class="org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor">
+        <property name="jobRegistry" ref="jobRegistry"/>
+    </bean>
+
+    <!-- Job Registry -->
+    <bean id="jobRegistry" class="org.springframework.batch.core.configuration.support.MapJobRegistry"/>
+
+    <!-- Job Launcher -->
+    <bean id="jobLauncher" class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+        <property name="jobRepository" ref="jobRepository"/>
+        <property name="taskExecutor" ref="jobTaskExecutor" />
+    </bean>
+
+    <bean id="jobTaskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor">
+        <property name="concurrencyLimit" value="10"/>
+    </bean>
+
+    <!-- Task executor for parallel chunks-->
+    <bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor">
+        <property name="concurrencyLimit" value="10"/>
+    </bean>
+
+    <!-- Decider for file actions on import step is completed -->
+    <bean id="fileActionDecider" class="fr.osb.smartf.agent.worker.batch.decider.ImportFileStepDecider"/>
+
+</beans>

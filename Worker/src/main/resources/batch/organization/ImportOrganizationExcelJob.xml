@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                           http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+    <!-- JOB -->
+    <job id="importOrganizationExcelJob" parent="abstractParentJob">
+        <step id="importOrganizationExcelStep" parent="abstractStepImportFileJob"
+              next="organizationExcelFileActionDeciderStep">
+            <tasklet>
+                <chunk reader="organizationExcelItemReader" processor="organizationItemProcessor"
+                       writer="organizationItemWriter" commit-interval="10000" skip-limit="10">
+                    <skippable-exception-classes>
+                        <include class="org.springframework.batch.item.excel.ExcelFileParseException"/>
+                        <exclude class="org.springframework.batch.item.NonTransientResourceException"/>
+                    </skippable-exception-classes>
+                </chunk>
+            </tasklet>
+        </step>
+        <decision id="organizationExcelFileActionDeciderStep" decider="fileActionDecider">
+            <next on="COMPLETED" to="organizationDeleteExcelFileStep"/>
+            <next on="COMPLETED_WITH_ERRORS" to="organizationMoveErrorExcelFileStep"/>
+        </decision>
+        <step id="organizationDeleteExcelFileStep" parent="abstractStepDeleteFile"/>
+        <step id="organizationMoveErrorExcelFileStep" parent="abstractMoveErrorFileStep"/>
+    </job>
+
+    <!-- Excel file reader -->
+    <beans:bean id="organizationExcelItemReader" class="org.springframework.batch.item.excel.poi.PoiItemReader"
+                scope="step">
+        <beans:property name="resource" value="file:#{jobParameters[pathToFile]}"/>
+        <beans:property name="linesToSkip" value="1"/>
+        <beans:property name="rowMapper">
+            <beans:bean class="org.springframework.batch.item.excel.mapping.BeanWrapperRowMapper">
+                <beans:property name="targetType" value="fr.osb.smartf.agent.worker.service.dto.OrganizationDTO"/>
+            </beans:bean>
+        </beans:property>
+    </beans:bean>
+</beans:beans>

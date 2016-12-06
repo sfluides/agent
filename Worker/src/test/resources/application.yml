@@ -1,0 +1,55 @@
+worker.id: testWorker
+# spring params
+spring:
+  application:
+    name: importer
+  cloud:
+    zookeeper:
+      connect-string: localhost:2181
+  batch:
+    job:
+      names: none
+
+
+endpoints:
+  restart:
+    enabled: true
+  shutdown:
+    enabled: true
+  health:
+    sensitive: false
+
+# logging params
+logging:
+  file: application.log
+  level:
+
+    org.apache.zookeeper.ClientCnxn: WARN
+
+# auth params
+auth:
+  server:
+    check_token_url: http://${authHost}:8088/oauth/check_token/
+
+# mongo params
+mongo:
+  server:
+    #host: 10.185.4.198
+    host: localhost
+    #host: 10.185.22.25
+    port: 27017
+
+couch:
+  server:
+    hosts: localhost
+    bucket: smartf_test
+
+# shared location for files to be imported
+import:
+  basedir: \\10.185.22.75\import
+
+apache:
+  sling:
+    url: http://localhost:8888
+    user: admin
+    pass: admin

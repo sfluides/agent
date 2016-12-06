@@ -1,0 +1,60 @@
+worker.id: ${workerId}
+# spring params
+spring:
+  application:
+    name: ${workerType}
+  cloud:
+    zookeeper:
+      connect-string: ${zooHost}:2181
+  data:
+      mongodb:
+        host: ${mongoHost}
+      elasticsearch:
+        cluster-name: smartf_cluster
+        cluster-nodes: ${elasticHost}:9300
+  batch:
+    job:
+      names: none
+
+# embedded server params
+server:
+  port: ${port}
+
+endpoints:
+  restart:
+    enabled: true
+  shutdown:
+    enabled: true
+  health:
+    sensitive: false
+
+# logging params
+logging:
+  file: application.log
+  level:
+
+    org.apache.zookeeper.ClientCnxn: WARN
+
+# auth params
+auth:
+  server:
+    check_token_url: http://${authHost}:8088/oauth/check_token/
+
+couch:
+  server:
+    hosts: ${couchHost}
+    bucket: smartfluides
+    password: Administrator
+
+# shared location for files to be imported
+import:
+  basedir: ${importDir}
+
+apache:
+  sling:
+    url: http://${slingHost}:8888
+    user: admin
+    pass: admin
+
+elasticsearch:
+  host: http://${elasticHost}:9200/

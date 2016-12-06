@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                            http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+    <!-- Abstract Parent Job with listeners for all jobs -->
+    <job id="abstractParentJob" abstract="true">
+        <listeners>
+            <listener>
+                <beans:bean class="fr.osb.smartf.agent.worker.batch.parent.AbstractParentJobExecutionListener"></beans:bean>
+            </listener>
+        </listeners>
+    </job>
+
+
+    <!-- Abstract step for import file jobs -->
+    <step id="abstractStepImportFileJob" abstract="true">
+        <listeners>
+            <listener ref="treatmentStepExecutionListener"/>
+        </listeners>
+    </step>
+    <beans:bean id="treatmentStepExecutionListener"
+                class="fr.osb.smartf.agent.worker.batch.listener.TreatmentStepExecutionListener" scope="step"/>
+
+    <!-- Abstract step for deleting file -->
+    <step id="abstractStepDeleteFile" abstract="true">
+        <tasklet>
+            <beans:bean class="fr.osb.smartf.agent.worker.batch.tasklet.DeleteFileTasklet"/>
+        </tasklet>
+    </step>
+
+    <!-- Abstract step for uploading file to ged -->
+    <step id="abstractStepUploadFile" abstract="true">
+        <tasklet>
+            <beans:bean class="fr.osb.smartf.agent.worker.batch.tasklet.UploadFileRepositoryTasklet"/>
+        </tasklet>
+    </step>
+
+    <!-- Abstract step for move error file-->
+    <step id="abstractMoveErrorFileStep" abstract="true">
+        <tasklet>
+            <beans:bean class="fr.osb.smartf.agent.worker.batch.tasklet.MoveFileTasklet"/>
+        </tasklet>
+    </step>
+
+</beans:beans>

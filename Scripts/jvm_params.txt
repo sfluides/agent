@@ -1,0 +1,8 @@
+#### MinHeapFreeRatio=10
+#### MaxHeapFreeRatio=20
+MinHeapFreeRatio=30
+MaxHeapFreeRatio=70
+#### MinHeapFreeRatio=50
+#### MaxHeapFreeRatio=60
+#MaxHeapFreeRatio=70
+##MaxHeapFreeRatio=80

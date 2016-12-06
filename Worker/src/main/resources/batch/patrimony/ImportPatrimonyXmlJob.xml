@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/batch
+                            http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+
+    <!-- JOB Built Patrimony-->
+    <job id="importBuiltPatrimonyXmlJob" parent="abstractParentJob">
+        <step id="uploadBuiltPatrimonyFileStep" parent="abstractStepUploadFile" next="importBuiltPatrimonyXmlStep"/>
+        <step id="importBuiltPatrimonyXmlStep" parent="abstractStepImportFileJob" next="builtPatrimonyXmlFileActionDeciderStep">
+            <tasklet>
+                <chunk reader="builtPatrimonyXmlItemReader" processor="builtPatrimonyItemProcessor"
+                       writer="patrimonyItemWriter"
+                       commit-interval="10000" skip-limit="10">
+                    <skippable-exception-classes>
+                        <include class="org.springframework.oxm.UnmarshallingFailureException"/>
+                        <exclude class="org.springframework.batch.item.NonTransientResourceException"/>
+                    </skippable-exception-classes>
+                </chunk>
+            </tasklet>
+        </step>
+        <decision id="builtPatrimonyXmlFileActionDeciderStep" decider="fileActionDecider">
+            <next on="COMPLETED" to="builtPatrimonyDeleteXmlFileStep"/>
+            <next on="COMPLETED_WITH_ERRORS" to="builtPatrimonyMoveErrorXmlFileStep"/>
+        </decision>
+        <step id="builtPatrimonyDeleteXmlFileStep" parent="abstractStepDeleteFile"/>
+        <step id="builtPatrimonyMoveErrorXmlFileStep" parent="abstractMoveErrorFileStep"/>
+    </job>
+
+    <!-- BuiltPatrimonyXmlItemReader -->
+    <beans:bean id="builtPatrimonyXmlItemReader" class="org.springframework.batch.item.xml.StaxEventItemReader"
+                scope="step">
+        <beans:property name="fragmentRootElementName" value="PATRIMOINE_CONSTRUIT"/>
+        <beans:property name="resource" value="file:#{jobParameters[pathToFile]}"/>
+        <beans:property name="unmarshaller" ref="builtPatrimonyMarshaller"/>
+    </beans:bean>
+    <!-- BuiltPatrimonyMarshaller -->
+    <beans:bean id="builtPatrimonyMarshaller"
+                class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+        <beans:property name="classesToBeBound">
+            <beans:list>
+                <beans:value>fr.osb.smartf.agent.worker.service.dto.patrimony.BuiltPatrimonyDTO</beans:value>
+            </beans:list>
+        </beans:property>
+    </beans:bean>
+
+    <!-- BuiltPatrimonyItemProcessor -->
+    <beans:bean id="builtPatrimonyItemProcessor"
+                class="fr.osb.smartf.agent.worker.batch.patrimony.processor.BuiltPatrimonyItemProcessor"/>
+
+
+    <!-- JOB Installed Patrimony-->
+    <job id="importInstalledPatrimonyXmlJob" parent="abstractParentJob">
+        <step id="importInstalledPatrimonyXmlStep" parent="abstractStepImportFileJob"
+              next="installedPatrimonyXmlFileActionDeciderStep">
+            <tasklet>
+                <chunk reader="installedPatrimonyXmlItemReader" processor="installedPatrimonyItemProcessor"
+                       writer="patrimonyItemWriter"
+                       commit-interval="10000" skip-limit="10">
+                    <skippable-exception-classes>
+                        <include class="org.springframework.oxm.UnmarshallingFailureException"/>
+                        <exclude class="org.springframework.batch.item.NonTransientResourceException"/>
+                    </skippable-exception-classes>
+                </chunk>
+            </tasklet>
+        </step>
+        <decision id="installedPatrimonyXmlFileActionDeciderStep" decider="fileActionDecider">
+            <next on="COMPLETED" to="installedPatrimonyDeleteXmlFileStep"/>
+            <next on="COMPLETED_WITH_ERRORS" to="installedPatrimonyMoveErrorXmlFileStep"/>
+        </decision>
+        <step id="installedPatrimonyDeleteXmlFileStep" parent="abstractStepDeleteFile"/>
+        <step id="installedPatrimonyMoveErrorXmlFileStep" parent="abstractMoveErrorFileStep"/>
+    </job>
+
+    <!-- InstalledPatrimonyXmlItemReader -->
+    <beans:bean id="installedPatrimonyXmlItemReader" class="org.springframework.batch.item.xml.StaxEventItemReader"
+                scope="step">
+        <beans:property name="fragmentRootElementName" value="PATRIMOINE_INSTALLE"/>
+        <beans:property name="resource" value="file:#{jobParameters[pathToFile]}"/>
+        <beans:property name="unmarshaller" ref="installedPatrimonyMarshaller"/>
+    </beans:bean>
+    <!-- InstalledPatrimonyMarshaller -->
+    <beans:bean id="installedPatrimonyMarshaller"
+                class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+        <beans:property name="classesToBeBound">
+            <beans:list>
+                <beans:value>fr.osb.smartf.agent.worker.service.dto.patrimony.InstalledPatrimonyDTO</beans:value>
+            </beans:list>
+        </beans:property>
+    </beans:bean>
+
+    <!-- InstalledPatrimonyItemProcessor -->
+    <beans:bean id="installedPatrimonyItemProcessor"
+                class="fr.osb.smartf.agent.worker.batch.patrimony.processor.InstalledPatrimonyItemProcessor"/>
+
+    <!-- PatrimonyItemWriter -->
+    <beans:bean id="patrimonyItemWriter" class="fr.osb.smartf.agent.worker.batch.patrimony.writer.CouchbaseItemWriter">
+        <beans:constructor-arg index="0" ref="couchbaseTemplate"/>
+    </beans:bean>
+
+    <beans:bean id="jobLauncherBuiltPatrimonyTestUtils" class="org.springframework.batch.test.JobLauncherTestUtils">
+        <beans:property name="job" ref="importBuiltPatrimonyXmlJob"/>
+        <beans:property name="jobRepository" ref="jobRepository"/>
+        <beans:property name="jobLauncher" ref="jobLauncher"/>
+    </beans:bean>
+
+    <beans:bean id="jobLauncherInstalledPatrimonyTestUtils" class="org.springframework.batch.test.JobLauncherTestUtils">
+        <beans:property name="job" ref="importInstalledPatrimonyXmlJob"/>
+        <beans:property name="jobRepository" ref="jobRepository"/>
+        <beans:property name="jobLauncher" ref="jobLauncher"/>
+    </beans:bean>
+
+</beans:beans>
