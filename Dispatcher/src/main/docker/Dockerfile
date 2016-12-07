@@ -1,3 +1,4 @@
+#TODO change base image
 FROM frolvlad/alpine-oraclejdk8:slim
 VOLUME /tmp
 ADD dispatcher.jar dispatcher.jar
