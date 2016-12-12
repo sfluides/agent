@@ -13,7 +13,14 @@
         <property name="collection" value="readings"/>
     </bean>
 
+    <bean id="readingUhfItemWriter" class="fr.osb.smartf.agent.worker.batch.patrimony.writer.CouchbaseItemWriter">
+        <constructor-arg index="0" ref="couchbaseTemplate"/>
+    </bean>
+
     <!-- ReadingItemProcessor -->
     <bean id="readingItemProcessor" class="fr.osb.smartf.agent.worker.batch.reading.processor.ReadingItemProcessor"/>
+
+    <!-- ReadingUhfItemProcessor -->
+    <bean id="readingUhfItemProcessor" class="fr.osb.smartf.agent.worker.batch.reading.processor.ReadingUhfItemProcessor"/>
 
 </beans>

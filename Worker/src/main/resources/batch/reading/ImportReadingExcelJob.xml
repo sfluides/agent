@@ -11,7 +11,7 @@
     <job id="importReadingExcelJob" parent="abstractParentJob">
         <step id="importReadingExcelStep" parent="abstractStepImportFileJob" next="readingExcelFileActionDeciderStep">
             <tasklet>
-                <chunk reader="readingExcelItemReader" processor="readingItemProcessor" writer="readingItemWriter"
+                <chunk reader="readingExcelItemReader" processor="readingUhfItemProcessor" writer="readingUhfItemWriter"
                        commit-interval="10000" skip-limit="10">
                     <skippable-exception-classes>
                         <include class="org.springframework.batch.item.excel.ExcelFileParseException"/>
@@ -34,7 +34,7 @@
         <beans:property name="linesToSkip" value="1"/>
         <beans:property name="rowMapper">
             <beans:bean class="org.springframework.batch.item.excel.mapping.BeanWrapperRowMapper">
-                <beans:property name="targetType" value="fr.osb.smartf.agent.worker.service.dto.ReadingDTO"/>
+                <beans:property name="targetType" value="fr.osb.smartf.agent.worker.service.dto.ReadingUhfDTO"/>
             </beans:bean>
         </beans:property>
     </beans:bean>
