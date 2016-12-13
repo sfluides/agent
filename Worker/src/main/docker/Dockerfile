@@ -1,4 +1,4 @@
-FROM frolvlad/alpine-oraclejdk8:slim
+FROM szagoret/alpine-3.3-jre8
 VOLUME /tmp
 ADD worker.jar worker.jar
 RUN sh -c 'touch /worker.jar'
